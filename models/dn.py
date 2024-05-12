@@ -99,19 +99,12 @@ class DenseInstanceNorm(nn.Module):
                 x_std = self.padded_std_table[
                     :, :, top:down, left:right
                 ]  # 1, C, H, W
-                #x_mean = multiply_kernel(x_mean)
-                # x_std = multiply_kernel(x_std)
-                #print(x_mean.shape)
-                #print(self.interpolation3d.)
-                #exit()
 
                 x_mean = self.interpolation3d.interpolation_mean_table(x_mean[0]).unsqueeze(0)
                 x_std = self.interpolation3d.interpolation_std_table_inverse(x_std[0]).unsqueeze(0)
-                #print(x.shape, x_mean.shape, x_std.shape)
 
 
                 x = (x - x_mean) * x_std * self.weight + self.bias
-            # x = (x - x_mean) / x_std * self.weight + self.bias
             return x
 
 
@@ -232,13 +225,6 @@ class PrefetchDenseInstanceNorm(nn.Module):
             x_mean = self.padded_mean_table[
                 :, :, top:down, left:right
             ].squeeze(0)  # 1, C, H, W
-
-            # has_zero = (x_mean == 0).any()
-            # if has_zero:
-            #     self.pad_table(padding=1)
-            #     x_mean = self.padded_mean_table[
-            #         :, :, top:down, left:right
-            #     ]  # 1, C, H, W
             
             x_std = self.padded_std_table[
                 :, :, top:down, left:right
@@ -251,8 +237,6 @@ class PrefetchDenseInstanceNorm(nn.Module):
 
             x_mean = self.interpolation3d.interpolation_mean_table(x_mean).unsqueeze(0)
             x_std = self.interpolation3d.interpolation_std_table_inverse(x_std).unsqueeze(0)
-            # x_mean = x_mean.mean(axis=-1).mean(axis=-1).reshape(1, -1, 1, 1)
-            # x_std = x_std.mean(axis=-1).mean(axis=-1).reshape(1, -1, 1, 1)
 
             real_x = (real_x - x_mean) * x_std * self.weight + self.bias
         x = torch.cat((real_x, pre_x), dim=0)

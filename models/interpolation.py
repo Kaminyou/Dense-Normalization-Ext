@@ -23,77 +23,32 @@ class Interpolation3D:
     def init_matrix(self):
         self.small_to_large = torch.arange(0.5, self.size + 0.5, 1).to(self.device) # [0.5, 511.5]
         self.large_to_small = torch.arange(self.size - 0.5, 0, -1).to(self.device) # [511.5, 0.5]
-        # self.small_to_large = torch.arange(0.5, self.size + 0.5, 512).to(self.device) # [0.5, 511.5]
-        # self.small_to_large = torch.repeat_interleave(self.small_to_large, repeats=512, dim=0)
-        # self.large_to_small = torch.arange(self.size - 0.5, 0, -512).to(self.device) # [511.5, 0.5]
-        # self.large_to_small = torch.repeat_interleave(self.large_to_small, repeats=512, dim=0)
-        # each is [512, 512]
-        # import torch.nn as nn
-        # img = torch.Tensor([[1, 0], [1, 0]]).unsqueeze(0).unsqueeze(0).to(self.device)
-        # img = nn.functional.interpolate(img, [512,512], mode='bilinear', align_corners=True).squeeze(0).squeeze(0)
-        # self.top_left = img
-        # img = torch.Tensor([[0, 1], [0, 0]]).unsqueeze(0).unsqueeze(0).to(self.device)
-        # img = nn.functional.interpolate(img, [512,512], mode='bilinear', align_corners=True).squeeze(0).squeeze(0)
-        # self.down_left = img
-        # img = torch.Tensor([[0, 1], [0, 0]]).unsqueeze(0).unsqueeze(0).to(self.device)
-        # img = nn.functional.interpolate(img, [512,512], mode='bilinear', align_corners=True).squeeze(0).squeeze(0)
-        # self.top_right = img
-        # img = torch.Tensor([[0, 0], [0, 1]]).unsqueeze(0).unsqueeze(0).to(self.device)
-        # img = nn.functional.interpolate(img, [512,512], mode='bilinear', align_corners=True).squeeze(0).squeeze(0)
-        # self.down_right = img
 
         self.top_left = ((self.large_to_small * self.large_to_small.unsqueeze(0).T) / self.size / self.size).contiguous()
         self.down_left = ((self.large_to_small * self.small_to_large.unsqueeze(0).T) / self.size / self.size).contiguous()
         self.top_right = ((self.small_to_large * self.large_to_small.unsqueeze(0).T) / self.size / self.size).contiguous()
         self.down_right = ((self.small_to_large * self.small_to_large.unsqueeze(0).T) / self.size / self.size).contiguous()
-    def cpu_int(self, top_left_value, top_right_value, down_left_value, down_right_value):
-        # from scipy.ndimage import zoom
-        # import numpy as np
-        # original_array = np.array([[float(top_left_value), float(top_right_value)], [float(down_left_value), float(down_right_value)]]) * self.size
-        # upscaled_array = zoom(original_array, (self.half_size, self.half_size), order=1)  # order=1 for bilinear
-        # upscaled_array /= self.size
-        # return torch.Tensor(upscaled_array).to(self.device)
-        import torch.nn as nn
-        c, _, _ = top_left_value.shape
-        img = torch.zeros((1, c, 2, 2))
-        img[0, :, 0, 0] = top_left_value.cpu().squeeze()
-        img[0, :, 0, 1] = top_right_value.cpu().squeeze()
-        img[0, :, 1, 0] = down_left_value.cpu().squeeze()
-        img[0, :, 0, 1] = down_right_value.cpu().squeeze()
-        img = nn.functional.interpolate(img, [self.size, self.size], mode='bilinear', align_corners=True).squeeze(0).to(self.device)
-        # img = torch.zeros((1, c, 2, 2)).to(self.device)
-        # img[0, :, 0, 0] = top_left_value.squeeze()
-        # img[0, :, 0, 1] = top_right_value.squeeze()
-        # img[0, :, 1, 0] = down_left_value.squeeze()
-        # img[0, :, 0, 1] = down_right_value.squeeze()
-        # img = nn.functional.interpolate(img, [self.size, self.size], mode='bilinear', align_corners=True).squeeze(0)
-        return img
-
 
     def top_left_corner(self, top_left_value, top_right_value, down_left_value, down_right_value):
         # [C, 1, 1] * [512, 512] -> [C, 512, 512]
-        # return self.cpu_int(top_left_value, top_right_value, down_left_value, down_right_value)[:, -self.half_size:, -self.half_size:]
         return top_left_value * self.top_left[-self.half_size:, -self.half_size:] + \
                 top_right_value * self.top_right[-self.half_size:, -self.half_size:] + \
                 down_left_value * self.down_left[-self.half_size:, -self.half_size:] + \
                 down_right_value * self.down_right[-self.half_size:, -self.half_size:]
 
     def top_right_corner(self, top_left_value, top_right_value, down_left_value, down_right_value):
-        # return self.cpu_int(top_left_value, top_right_value, down_left_value, down_right_value)[:, -self.half_size:, :self.half_size]
         return top_left_value * self.top_left[-self.half_size:, :self.half_size] + \
                 top_right_value * self.top_right[-self.half_size:, :self.half_size] + \
                 down_left_value * self.down_left[-self.half_size:, :self.half_size] + \
                 down_right_value * self.down_right[-self.half_size:, :self.half_size]
 
     def down_left_corner(self, top_left_value, top_right_value, down_left_value, down_right_value):
-        # return self.cpu_int(top_left_value, top_right_value, down_left_value, down_right_value)[:, :self.half_size, -self.half_size:]
         return top_left_value * self.top_left[:self.half_size, -self.half_size:] + \
                 top_right_value * self.top_right[:self.half_size, -self.half_size:] + \
                 down_left_value * self.down_left[:self.half_size, -self.half_size:] + \
                 down_right_value * self.down_right[:self.half_size, -self.half_size:]
 
     def down_right_corner(self, top_left_value, top_right_value, down_left_value, down_right_value):
-        #return self.cpu_int(top_left_value, top_right_value, down_left_value, down_right_value)[:, :self.half_size, :self.half_size]
         return top_left_value * self.top_left[:self.half_size, :self.half_size] + \
                 top_right_value * self.top_right[:self.half_size, :self.half_size] + \
                 down_left_value * self.down_left[:self.half_size, :self.half_size] + \
