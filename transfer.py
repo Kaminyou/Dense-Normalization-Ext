@@ -11,7 +11,7 @@ from utils.util import read_yaml_config
 
 def id_generator(size=6, chars=string.ascii_uppercase + string.digits):
     return ''.join(random.choice(chars) for _ in range(size))
-    
+
 
 def main():
     """
@@ -32,9 +32,9 @@ def main():
     args = parser.parse_args()
 
     config = read_yaml_config(args.config)
-    
+
     # generate a temperate config file
-    dir_path = os.path.dirname(os.path.normpath(args.config)) 
+    dir_path = os.path.dirname(os.path.normpath(args.config))
     temp_config_path = os.path.join(dir_path, f"{id_generator()}.yaml")
     with open(temp_config_path, 'w') as f:
         yaml.dump(config, f)
@@ -54,7 +54,6 @@ def main():
     os.system(
         f"python3 combine.py --config {temp_config_path} "
         f"--resize_h {H} --resize_w {W}"
-        #f"--resize_h {H} --resize_w {W} --clear_temp_files"
     )
     os.remove(temp_config_path)
 

@@ -71,14 +71,14 @@ def main():
 
     filenames = os.listdir(path_base)
     try:
-        filenames.remove("thumbnail_Y_fake.png")
+        filenames.remove('thumbnail_Y_fake.png')
     except Exception:
         pass
 
     y_anchor_max = 0
     x_anchor_max = 0
     for filename in filenames:
-        _, _, y_anchor, x_anchor, _ = filename.split("_", 4)
+        _, _, y_anchor, x_anchor, _ = filename.split('_', 4)
         y_anchor_max = max(y_anchor_max, int(y_anchor))
         x_anchor_max = max(x_anchor_max, int(x_anchor))
 
@@ -88,8 +88,8 @@ def main():
     )
 
     for filename in sorted(filenames):
-        print(f"Combine {filename}  ", end="\r")
-        _, _, y_anchor, x_anchor, _ = filename.split("_", 4)
+        print(f'Combine {filename}  ', end='\r')
+        _, _, y_anchor, x_anchor, _ = filename.split('_', 4)
         y_anchor = int(y_anchor)
         x_anchor = int(x_anchor)
         image = cv2.imread(os.path.join(path_base, filename))
@@ -107,5 +107,6 @@ def main():
     if args.clear_temp_files:
         shutil.rmtree(path_base)
 
-if __name__ == "__main__":
+
+if __name__ == '__main__':
     main()

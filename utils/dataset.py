@@ -139,7 +139,11 @@ class XInferenceDataset(Dataset):
         X_path = os.path.join(self.root_X, X_img_name)
 
         X_img = np.array(Image.open(X_path).convert("RGB"))
-        X_img = np.pad(X_img, ((self.pad, self.pad), (self.pad, self.pad), (0, 0)), 'reflect')  # pad
+        X_img = np.pad(
+            X_img,
+            ((self.pad, self.pad), (self.pad, self.pad), (0, 0)),
+            'reflect',
+        )  # pad
 
         if self.transform:
             augmentations = self.transform(image=X_img)
@@ -187,12 +191,12 @@ class XPrefetchInferenceDataset(Dataset):
             first_part = int(parts[1])  # The part after the first underscore
             second_part = int(parts[0])  # The part before the first underscore
             return first_part, second_part
-    
+
         filenames = os.listdir(root_X)
         remove_file(filenames, "thumbnail.png")
         remove_file(filenames, "blank_patches_list.csv")
 
-        self.X_images = sorted(filenames, key=custom_sort_key)        
+        self.X_images = sorted(filenames, key=custom_sort_key)
 
         if self.return_anchor:
             self.__get_boundary()
@@ -219,7 +223,11 @@ class XPrefetchInferenceDataset(Dataset):
     def get_image(self, index):
         if index < 0 or index >= len(self.X_images):
             X_img = np.zeros((512, 512, 3), dtype=np.uint8)
-            X_img = np.pad(X_img, ((self.pad, self.pad), (self.pad, self.pad), (0, 0)), 'reflect')  # pad
+            X_img = np.pad(
+                X_img,
+                ((self.pad, self.pad), (self.pad, self.pad), (0, 0)),
+                'reflect',
+            )  # pad
             if self.transform:
                 augmentations = self.transform(image=X_img)
                 X_img = augmentations["image"]
@@ -232,13 +240,17 @@ class XPrefetchInferenceDataset(Dataset):
                 "y_anchor": -1,
                 "x_anchor": -1,
             }
-        
+
         X_img_name = self.X_images[index]
 
         X_path = os.path.join(self.root_X, X_img_name)
 
         X_img = np.array(Image.open(X_path).convert("RGB"))
-        X_img = np.pad(X_img, ((self.pad, self.pad), (self.pad, self.pad), (0, 0)), 'reflect')  # pad
+        X_img = np.pad(
+            X_img,
+            ((self.pad, self.pad), (self.pad, self.pad), (0, 0)),
+            'reflect',
+        )  # pad
         if self.transform:
             augmentations = self.transform(image=X_img)
             X_img = augmentations["image"]
@@ -248,7 +260,7 @@ class XPrefetchInferenceDataset(Dataset):
         ).stem.split("_")[:4]
         y_idx = int(y_idx)
         x_idx = int(x_idx)
-        
+
         return {
             'img': X_img,
             "path": X_path,

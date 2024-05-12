@@ -17,6 +17,7 @@ from utils.util import (
 
 MARGIN_PADDING = 16
 
+
 def main():
     parser = argparse.ArgumentParser("Model inference")
     parser.add_argument(
@@ -84,7 +85,7 @@ def main():
     )
     os.makedirs(save_path_base, exist_ok=True)
     print(save_path_base)
-    
+
     if not config["INFERENCE_SETTING"].get('PARALLELISM', False):
         os.makedirs(save_path_base, exist_ok=True)
         y_anchor_num, x_anchor_num = test_dataset.get_boundary()
@@ -130,7 +131,7 @@ def main():
                 x_anchor=x_anchor,
                 padding=1,
             )
-            Y_fake = Y_fake[:, :, MARGIN_PADDING:512 + MARGIN_PADDING, MARGIN_PADDING:512 + MARGIN_PADDING]
+            Y_fake = Y_fake[:, :, MARGIN_PADDING:512 + MARGIN_PADDING, MARGIN_PADDING:512 + MARGIN_PADDING]  # noqa
             total_time += time.time() - now
             if config["INFERENCE_SETTING"]["SAVE_ORIGINAL_IMAGE"]:
                 save_image(
@@ -175,7 +176,7 @@ def main():
             )
             total_time += time.time() - now
             Y_fake = Y_fake[[0]]
-            Y_fake = Y_fake[:, :, MARGIN_PADDING:512 + MARGIN_PADDING, MARGIN_PADDING:512 + MARGIN_PADDING]
+            Y_fake = Y_fake[:, :, MARGIN_PADDING:512 + MARGIN_PADDING, MARGIN_PADDING:512 + MARGIN_PADDING]  # noqa
             if data['y_idx'][0] != -1:
                 X_path = data['X_path']
                 save_image(

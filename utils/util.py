@@ -53,7 +53,7 @@ def get_transforms(random_crop=False, augment=False):
 
 test_transforms = A.Compose(
     [
-        #A.Resize(width=512, height=512),
+        # A.Resize(width=512, height=512),  # due to margin padding
         A.Normalize(
             mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5], max_pixel_value=255
         ),
