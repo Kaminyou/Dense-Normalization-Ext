@@ -98,12 +98,13 @@ class XYDataset(Dataset):
 
 class XInferenceDataset(Dataset):
     def __init__(
-        self, root_X, transform=None, return_anchor=False, thumbnail=None
+        self, root_X, transform=None, return_anchor=False, thumbnail=None, pad: int = 16,
     ):
         self.root_X = root_X
         self.transform = transform
         self.return_anchor = return_anchor
         self.thumbnail = thumbnail
+        self.pad = pad
 
         self.X_images = os.listdir(root_X)
 
@@ -138,6 +139,7 @@ class XInferenceDataset(Dataset):
         X_path = os.path.join(self.root_X, X_img_name)
 
         X_img = np.array(Image.open(X_path).convert("RGB"))
+        X_img = np.pad(X_img, ((self.pad, self.pad), (self.pad, self.pad), (0, 0)), 'reflect')  # pad
 
         if self.transform:
             augmentations = self.transform(image=X_img)
@@ -171,12 +173,13 @@ class XInferenceDataset(Dataset):
 
 class XPrefetchInferenceDataset(Dataset):
     def __init__(
-        self, root_X, transform=None, return_anchor=False, thumbnail=None
+        self, root_X, transform=None, return_anchor=False, thumbnail=None, pad: int = 16,
     ):
         self.root_X = root_X
         self.transform = transform
         self.return_anchor = return_anchor
         self.thumbnail = thumbnail
+        self.pad = pad
 
         def custom_sort_key(filename):
             parts = filename.split('_')
@@ -214,10 +217,9 @@ class XPrefetchInferenceDataset(Dataset):
         return self.length_dataset
 
     def get_image(self, index):
-        pad = 16
         if index < 0 or index >= len(self.X_images):
             X_img = np.zeros((512, 512, 3), dtype=np.uint8)
-            X_img = np.pad(X_img, ((pad, pad), (pad, pad), (0, 0)), 'reflect')  # pad
+            X_img = np.pad(X_img, ((self.pad, self.pad), (self.pad, self.pad), (0, 0)), 'reflect')  # pad
             if self.transform:
                 augmentations = self.transform(image=X_img)
                 X_img = augmentations["image"]
@@ -236,7 +238,7 @@ class XPrefetchInferenceDataset(Dataset):
         X_path = os.path.join(self.root_X, X_img_name)
 
         X_img = np.array(Image.open(X_path).convert("RGB"))
-        X_img = np.pad(X_img, ((pad, pad), (pad, pad), (0, 0)), 'reflect')  # pad
+        X_img = np.pad(X_img, ((self.pad, self.pad), (self.pad, self.pad), (0, 0)), 'reflect')  # pad
         if self.transform:
             augmentations = self.transform(image=X_img)
             X_img = augmentations["image"]
