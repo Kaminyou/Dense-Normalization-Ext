@@ -6,7 +6,7 @@ from torch.optim import lr_scheduler
 from models.base import BaseModel
 from models.discriminator import Discriminator
 from models.generator import Generator
-from models.iin import (
+from models.dn import (
     init_interpolated_instance_norm,
     use_interpolated_instance_norm,
     not_use_interpolated_instance_norm,
