@@ -5,24 +5,17 @@ from torch.optim import lr_scheduler
 
 from models.base import BaseModel
 from models.discriminator import Discriminator
+from models.dn import (init_dense_instance_norm,
+                       init_prefetch_dense_instance_norm,
+                       not_use_dense_instance_norm, use_dense_instance_norm)
 from models.generator import Generator
-from models.dn import (
-    init_dense_instance_norm,
-    use_dense_instance_norm,
-    not_use_dense_instance_norm,
-    init_prefetch_dense_instance_norm,
-)
-from models.kin import (
-    init_kernelized_instance_norm,
-    not_use_kernelized_instance_norm,
-    use_kernelized_instance_norm,
-)
+from models.kin import (init_kernelized_instance_norm,
+                        not_use_kernelized_instance_norm,
+                        use_kernelized_instance_norm)
 from models.projector import Head
-from models.tin import (
-    init_thumbnail_instance_norm,
-    not_use_thumbnail_instance_norm,
-    use_thumbnail_instance_norm,
-)
+from models.tin import (init_thumbnail_instance_norm,
+                        not_use_thumbnail_instance_norm,
+                        use_thumbnail_instance_norm)
 
 
 class ContrastiveModel(BaseModel):

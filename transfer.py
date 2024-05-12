@@ -1,10 +1,10 @@
 import argparse
 import os
-import yaml
-import string
 import random
+import string
 
 import cv2
+import yaml
 
 from utils.util import read_yaml_config
 

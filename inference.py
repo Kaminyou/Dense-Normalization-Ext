@@ -9,11 +9,8 @@ from torchvision.utils import save_image
 
 from models.model import get_model
 from utils.dataset import XInferenceDataset, XPrefetchInferenceDataset
-from utils.util import (
-    read_yaml_config,
-    reverse_image_normalize,
-    test_transforms,
-)
+from utils.util import (read_yaml_config, reverse_image_normalize,
+                        test_transforms)
 
 MARGIN_PADDING = 16
 
