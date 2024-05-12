@@ -7,10 +7,10 @@ from models.base import BaseModel
 from models.discriminator import Discriminator
 from models.generator import Generator
 from models.dn import (
-    init_interpolated_instance_norm,
-    use_interpolated_instance_norm,
-    not_use_interpolated_instance_norm,
-    init_prefetch_interpolated_instance_norm,
+    init_dense_instance_norm,
+    use_dense_instance_norm,
+    not_use_dense_instance_norm,
+    init_prefetch_dense_instance_norm,
 )
 from models.kin import (
     init_kernelized_instance_norm,
@@ -220,30 +220,30 @@ class ContrastiveModel(BaseModel):
     def not_use_kernelized_instance_norm_for_whole_model(self):
         not_use_kernelized_instance_norm(self.G)
 
-    def init_interpolated_instance_norm_for_whole_model(
+    def init_dense_instance_norm_for_whole_model(
         self,
         y_anchor_num,
         x_anchor_num,
     ):
-        init_interpolated_instance_norm(
+        init_dense_instance_norm(
             self.G,
             y_anchor_num=y_anchor_num,
             x_anchor_num=x_anchor_num,
         )
     
-    def init_prefetch_interpolated_instance_norm_for_whole_model(
+    def init_prefetch_dense_instance_norm_for_whole_model(
         self,
         y_anchor_num,
         x_anchor_num,
     ):
-        init_prefetch_interpolated_instance_norm(
+        init_prefetch_dense_instance_norm(
             self.G,
             y_anchor_num=y_anchor_num,
             x_anchor_num=x_anchor_num,
         )
 
-    def use_interpolated_instance_norm_for_whole_model(self):
-        use_interpolated_instance_norm(self.G, padding=1)
+    def use_dense_instance_norm_for_whole_model(self):
+        use_dense_instance_norm(self.G, padding=1)
 
-    def not_use_interpolated_instance_norm_for_whole_model(self):
-        not_use_interpolated_instance_norm(self.G)
+    def not_use_dense_instance_norm_for_whole_model(self):
+        not_use_dense_instance_norm(self.G)

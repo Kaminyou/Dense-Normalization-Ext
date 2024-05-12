@@ -90,7 +90,7 @@ def main():
         y_anchor_num, x_anchor_num = test_dataset.get_boundary()
         # as the anchor num from 0 to N,
         # anchor_num = N but it actually has N + 1 values
-        model.init_interpolated_instance_norm_for_whole_model(
+        model.init_dense_instance_norm_for_whole_model(
             y_anchor_num=y_anchor_num + 1,
             x_anchor_num=x_anchor_num + 1,
         )
@@ -114,7 +114,7 @@ def main():
             )
             total_time += time.time() - now
 
-        model.use_interpolated_instance_norm_for_whole_model()
+        model.use_dense_instance_norm_for_whole_model()
         for idx, data in enumerate(test_loader):
             print(f"Processing {idx}", end="\r")
             X, X_path, y_anchor, x_anchor = (
@@ -154,7 +154,7 @@ def main():
         y_anchor_num, x_anchor_num = test_dataset.get_boundary()
         # as the anchor num from 0 to N,
         # anchor_num = N but it actually has N + 1 values
-        model.init_prefetch_interpolated_instance_norm_for_whole_model(
+        model.init_prefetch_dense_instance_norm_for_whole_model(
             y_anchor_num=y_anchor_num + 1,
             x_anchor_num=x_anchor_num + 1,
         )
