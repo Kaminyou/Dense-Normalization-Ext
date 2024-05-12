@@ -122,7 +122,7 @@ class CycleGanModel(BaseModel):
         return Y_fake
 
     def inference_with_anchor(self, X, y_anchor, x_anchor, padding=1, **kwargs):
-        assert self.normalization == "kin" or self.normalization == "iin"
+        assert self.normalization == "kin" or self.normalization == "dn"
         self.eval()
         with torch.no_grad():
             X = X.to(self.device)

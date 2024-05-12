@@ -32,7 +32,7 @@ class ResnetBlock(nn.Module):
         return x + self.model(x)
 
     def forward_with_anchor(self, x, y_anchor, x_anchor, padding=1, **kwargs):
-        assert self.normalization == "kin" or self.normalization == "iin"
+        assert self.normalization == "kin" or self.normalization == "dn"
         x_residual = x
         x = self.model[:2](x)
         x = self.model[2](
@@ -104,7 +104,7 @@ class GeneratorBasicBlock(nn.Module):
         return x_hook, x
 
     def forward_with_anchor(self, x, y_anchor, x_anchor, padding=1, **kwargs):
-        assert self.normalization == "kin" or self.normalization == "iin"
+        assert self.normalization == "kin" or self.normalization == "dn"
         if self.do_upsample:
             x = self.upsample(x)
         x = self.conv(x)
@@ -243,7 +243,7 @@ class Generator(nn.Module):
         return x, feature_maps
 
     def forward_with_anchor(self, x, y_anchor, x_anchor, padding=1, **kwargs):
-        assert self.normalization == "kin" or self.normalization == "iin"
+        assert self.normalization == "kin" or self.normalization == "dn"
         x = self.reflectionpad(x)
         x = self.block1[0](x)
         x = self.block1[1](

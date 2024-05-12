@@ -36,7 +36,7 @@ def main():
         parallelism=config["INFERENCE_SETTING"].get('PARALLELISM', False),
     )
 
-    if config["INFERENCE_SETTING"]["NORMALIZATION"] != 'iin':
+    if config["INFERENCE_SETTING"]["NORMALIZATION"] != 'dn':
         raise ValueError('This normalization method is not supported')
 
     if config["INFERENCE_SETTING"].get('PARALLELISM', False):

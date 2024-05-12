@@ -6,7 +6,7 @@ from models.tin import ThumbInstanceNorm
 
 
 def get_normalization_layer(out_channels, normalization='kin', parallelism=False):
-    if normalization == 'iin':
+    if normalization == 'dn':
         if parallelism:
             return PrefetchDenseInstanceNorm(out_channels=out_channels)
         return DenseInstanceNorm(out_channels=out_channels)
