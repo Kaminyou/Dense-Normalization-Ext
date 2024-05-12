@@ -90,7 +90,7 @@ class CycleGanModel(BaseModel):
         if self.config["TRAINING_SETTING"]["LOAD_MODEL"]:
             self.load_networks(self.config["TRAINING_SETTING"]["EPOCH"])
 
-        lambda_lr = lambda epoch: 1.0 - max(
+        lambda_lr = lambda epoch: 1.0 - max(  # noqa
             0, epoch - self.config["TRAINING_SETTING"]["NUM_EPOCHS"] / 2
         ) / (self.config["TRAINING_SETTING"]["NUM_EPOCHS"] / 2)
         self.scheduler_G = lr_scheduler.LambdaLR(
@@ -290,7 +290,7 @@ class CycleGanModel(BaseModel):
             y_anchor_num=y_anchor_num,
             x_anchor_num=x_anchor_num,
         )
-    
+
     def init_prefetch_dense_instance_norm_for_whole_model(
         self,
         y_anchor_num,

@@ -103,7 +103,6 @@ class DenseInstanceNorm(nn.Module):
                 x_mean = self.interpolation3d.interpolation_mean_table(x_mean[0]).unsqueeze(0)
                 x_std = self.interpolation3d.interpolation_std_table_inverse(x_std[0]).unsqueeze(0)
 
-
                 x = (x - x_mean) * x_std * self.weight + self.bias
             return x
 
@@ -176,7 +175,7 @@ class PrefetchDenseInstanceNorm(nn.Module):
         # modify
         # padded table shape inconsisency
         # TODO: Don't permute the dimensions
-        
+
         self.padded_mean_table = self.pad_func(
             self.mean_table.permute(2, 0, 1).unsqueeze(0)
         )  # [H, W, C] -> [C, H, W] -> [N, C, H, W]
@@ -210,8 +209,8 @@ class PrefetchDenseInstanceNorm(nn.Module):
             self.mean_table[pre_y_anchor, pre_x_anchor] = pre_x_mean
             self.std_table[pre_y_anchor, pre_x_anchor] = pre_x_std
 
-            self.padded_mean_table[:, :, pre_y_anchor + 1, pre_x_anchor + 1]  = pre_x_mean.squeeze(0)
-            self.padded_std_table[:, :, pre_y_anchor + 1, pre_x_anchor + 1]  = pre_x_std.squeeze(0)
+            self.padded_mean_table[:, :, pre_y_anchor + 1, pre_x_anchor + 1] = pre_x_mean.squeeze(0)  # noqa
+            self.padded_std_table[:, :, pre_y_anchor + 1, pre_x_anchor + 1] = pre_x_std.squeeze(0)
             pre_x_mean = pre_x_mean.unsqueeze(-1).unsqueeze(-1)
             pre_x_std = pre_x_std.unsqueeze(-1).unsqueeze(-1)
 
@@ -225,7 +224,7 @@ class PrefetchDenseInstanceNorm(nn.Module):
             x_mean = self.padded_mean_table[
                 :, :, top:down, left:right
             ].squeeze(0)  # 1, C, H, W
-            
+
             x_std = self.padded_std_table[
                 :, :, top:down, left:right
             ].squeeze(0)

@@ -9,7 +9,6 @@ class Interpolation3D:
         self.is_init = False
         self.device = device
 
-
     def init(self, size):
         if self.is_init:
             return
@@ -21,13 +20,18 @@ class Interpolation3D:
         self.is_init = True
 
     def init_matrix(self):
-        self.small_to_large = torch.arange(0.5, self.size + 0.5, 1).to(self.device) # [0.5, 511.5]
-        self.large_to_small = torch.arange(self.size - 0.5, 0, -1).to(self.device) # [511.5, 0.5]
+        self.small_to_large = torch.arange(0.5, self.size + 0.5, 1).to(self.device)
+        self.large_to_small = torch.arange(self.size - 0.5, 0, -1).to(self.device)
 
-        self.top_left = ((self.large_to_small * self.large_to_small.unsqueeze(0).T) / self.size / self.size).contiguous()
-        self.down_left = ((self.large_to_small * self.small_to_large.unsqueeze(0).T) / self.size / self.size).contiguous()
-        self.top_right = ((self.small_to_large * self.large_to_small.unsqueeze(0).T) / self.size / self.size).contiguous()
-        self.down_right = ((self.small_to_large * self.small_to_large.unsqueeze(0).T) / self.size / self.size).contiguous()
+        self.top_left = (self.large_to_small * self.large_to_small.unsqueeze(0).T) / self.size / self.size  # noqa
+        self.down_left = (self.large_to_small * self.small_to_large.unsqueeze(0).T) / self.size / self.size  # noqa
+        self.top_right = (self.small_to_large * self.large_to_small.unsqueeze(0).T) / self.size / self.size  # noqa
+        self.down_right = (self.small_to_large * self.small_to_large.unsqueeze(0).T) / self.size / self.size  # noqa
+
+        self.top_left = self.top_left.contiguous()
+        self.down_left = self.down_left.contiguous()
+        self.top_right = self.top_right.contiguous()
+        self.down_right = self.down_right.contiguous()
 
     def top_left_corner(self, top_left_value, top_right_value, down_left_value, down_right_value):
         # [C, 1, 1] * [512, 512] -> [C, 512, 512]
@@ -75,7 +79,7 @@ class Interpolation3D:
             matrix_3x3,  # [C, 3, 3]
         )
 
-    def interpolation_mean_table(self, matrix_3x3): # [C, 3, 3] be on the same device
+    def interpolation_mean_table(self, matrix_3x3):  # [C, 3, 3] be on the same device
         matrix_3x3 = self.deal_with_inf(matrix_3x3)
         matrix_3x3 = matrix_3x3.unsqueeze(-1).unsqueeze(-1)  # [C, 3, 3] -> [C, 3, 3, 1, 1]
         # matrix_3x3[:, 0, 0, :, :] => will be [C, 1, 1]
@@ -91,7 +95,7 @@ class Interpolation3D:
             matrix_3x3[:, 2, 2, :, :],
         )
 
-    def interpolation_std_table_inverse(self, matrix_3x3): # [C, 3, 3] be on the same device
+    def interpolation_std_table_inverse(self, matrix_3x3):  # [C, 3, 3] be on the same device
         matrix_3x3 = self.deal_with_inf(matrix_3x3)
         matrix_3x3 = matrix_3x3.unsqueeze(-1).unsqueeze(-1)  # [C, 3, 3] -> [C, 3, 3, 1, 1]
         matrix_3x3 = 1 / (matrix_3x3 + self.eps)

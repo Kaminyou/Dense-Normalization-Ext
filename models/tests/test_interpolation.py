@@ -8,8 +8,8 @@ class Interpolation2D:
     # input [1] * 9
     # output [512, 512]
     def __init__(self):
-        self.small_to_large = torch.arange(0.5, 512.5, 1) # [0.5, 511.5]
-        self.large_to_small = torch.arange(511.5, 0, -1) # [511.5, 0.5]
+        self.small_to_large = torch.arange(0.5, 512.5, 1)
+        self.large_to_small = torch.arange(511.5, 0, -1)
         self.init_matrix()
 
     def init_matrix(self):
@@ -42,7 +42,6 @@ class Interpolation2D:
                 down_left_value * self.down_left[:256, :256] + \
                 down_right_value * self.down_right[:256, :256]
 
-
     def _interpolation_mean_table(self, y0x0, y0x1, y0x2, y1x0, y1x1, y1x2, y2x0, y2x1, y2x2):
         table = torch.zeros((512, 512))
         table[:256, :256] = self.top_left_corner(y0x0, y0x1, y1x0, y1x1)
@@ -52,7 +51,9 @@ class Interpolation2D:
 
         return table
 
-    def _interpolation_std_table_inverse(self, y0x0, y0x1, y0x2, y1x0, y1x1, y1x2, y2x0, y2x1, y2x2):
+    def _interpolation_std_table_inverse(
+        self, y0x0, y0x1, y0x2, y1x0, y1x1, y1x2, y2x0, y2x1, y2x2,
+    ):
         table = torch.zeros((512, 512))
         table[:256, :256] = self.top_left_corner(1 / y0x0, 1 / y0x1, 1 / y1x0, 1 / y1x1)
         table[:256, 256:] = self.top_right_corner(1 / y0x1, 1 / y0x2, 1 / y1x1, 1 / y1x2)
@@ -63,17 +64,33 @@ class Interpolation2D:
 
     def interpolation_mean_table(self, table):
         return self._interpolation_mean_table(
-            table[0, 0], table[0, 1], table[0, 2], table[1, 0], table[1, 1], table[1, 2], table[2, 0], table[2, 1], table[2, 2],
+            table[0, 0],
+            table[0, 1],
+            table[0, 2],
+            table[1, 0],
+            table[1, 1],
+            table[1, 2],
+            table[2, 0],
+            table[2, 1],
+            table[2, 2],
         )
 
     def interpolation_std_table_inverse(self, table):
         return self._interpolation_std_table_inverse(
-            table[0, 0], table[0, 1], table[0, 2], table[1, 0], table[1, 1], table[1, 2], table[2, 0], table[2, 1], table[2, 2],
+            table[0, 0],
+            table[0, 1],
+            table[0, 2],
+            table[1, 0],
+            table[1, 1],
+            table[1, 2],
+            table[2, 0],
+            table[2, 1],
+            table[2, 2],
         )
 
 
 def test_deal_with_inf():
-    inter3d = Interplation3D(channel=2, device="cpu")
+    inter3d = Interpolation3D(channel=2, device="cpu")
     matrix_3x3 = torch.Tensor([
         [[1, 2, torch.inf], [4, 5, 6], [torch.nan, 8, 9]],
         [[torch.nan, 4, torch.nan], [3, 1, 7], [10, torch.inf, 9]],
@@ -120,6 +137,7 @@ def test_std_table_cpu():
     for i in range(2):
         assert torch.allclose(result[i], inter2d.interpolation_std_table_inverse(table[i]))
 
+
 @pytest.mark.skipif(condition=not torch.cuda.is_available(), reason='cuda is not available')
 def test_mean_table_cuda():
     table = torch.Tensor([
@@ -151,4 +169,7 @@ def test_std_table_cuda():
 
     result = inter3d.interpolation_std_table_inverse(table.to("cuda"))
     for i in range(2):
-        assert torch.allclose(result[i], inter2d.interpolation_std_table_inverse(table[i]).to("cuda"))
+        assert torch.allclose(
+            result[i],
+            inter2d.interpolation_std_table_inverse(table[i]).to("cuda"),
+        )
