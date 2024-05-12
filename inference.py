@@ -88,7 +88,6 @@ def main():
     if not config["INFERENCE_SETTING"].get('PARALLELISM', False):
         os.makedirs(save_path_base, exist_ok=True)
         y_anchor_num, x_anchor_num = test_dataset.get_boundary()
-        print(y_anchor_num, x_anchor_num)
         # as the anchor num from 0 to N,
         # anchor_num = N but it actually has N + 1 values
         model.init_interpolated_instance_norm_for_whole_model(
