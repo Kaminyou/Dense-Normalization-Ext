@@ -111,9 +111,13 @@ class DenseInstanceNorm(nn.Module):
                         :, :, top:down, left:right
                     ]  # 1, C, H, W
 
-                    x_mean = self.interpolation3d.interpolation_mean_table(x_mean[0]).unsqueeze(0)
-                    x_std = self.interpolation3d.interpolation_std_table_inverse(x_std[0]).unsqueeze(0)
-                
+                    x_mean = self.interpolation3d.interpolation_mean_table(
+                        x_mean[0],
+                    ).unsqueeze(0)
+                    x_std = self.interpolation3d.interpolation_std_table_inverse(
+                        x_std[0],
+                    ).unsqueeze(0)
+
                 elif self.interpolate_mode == 'bicubic':
                     _, _, h, w = x.shape
                     top = y_anchor
@@ -127,9 +131,9 @@ class DenseInstanceNorm(nn.Module):
                         :, :, top:down, left:right
                     ]  # 1, C, H, W
                     x_mean = f.interpolate(x_mean, (h * 3, w * 3), mode='bicubic')
-                    x_mean = x_mean[:, :, h // 2: h // 2 + h, w // 2 : w // 2 + w]  # TODO: tricky
+                    x_mean = x_mean[:, :, h // 2: h // 2 + h, w // 2: w // 2 + w]  # TODO: tricky
                     x_std = f.interpolate(1 / x_std, (h * 3, w * 3), mode='bicubic')
-                    x_std = x_std[:, :, h // 2: h // 2 + h, w // 2 : w // 2 + w]  # TODO: tricky
+                    x_std = x_std[:, :, h // 2: h // 2 + h, w // 2: w // 2 + w]  # TODO: tricky
                 else:
                     raise ValueError('no interpolate_mode support')
 
