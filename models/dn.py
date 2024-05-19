@@ -1,12 +1,16 @@
 import torch
 import torch.nn as nn
+import torch.nn.functional as f
 
 from models.interpolation import Interpolation3D
 
 
 class DenseInstanceNorm(nn.Module):
-    def __init__(self, out_channels=None, affine=True, device="cuda"):
+    def __init__(self, out_channels=None, affine=True, device="cuda", interpolate_mode='bicubic'):
         super(DenseInstanceNorm, self).__init__()
+
+        if interpolate_mode not in ['bilinear', 'bicubic']:
+            raise ValueError('interpolate_mode supports bilinear and bicubic only')
 
         # if use normal instance normalization during evaluation mode
         self.normal_instance_normalization = False
@@ -17,6 +21,8 @@ class DenseInstanceNorm(nn.Module):
 
         self.out_channels = out_channels
         self.device = device
+        self.interpolate_mode = interpolate_mode
+
         self.interpolation3d = Interpolation3D(channel=out_channels, device=device)
         if affine:
             self.weight = nn.Parameter(
@@ -45,7 +51,11 @@ class DenseInstanceNorm(nn.Module):
         # modify
         # padded table shape inconsisency
         # TODO: Don't permute the dimensions
-        pad_func = nn.ReplicationPad2d((padding, padding, padding, padding))
+
+        if self.interpolate_mode == 'bicubic':  # TODO: set elegantly
+            pad_func = nn.ReplicationPad2d((1, 2, 1, 2))
+        else:
+            pad_func = nn.ReplicationPad2d((padding, padding, padding, padding))
         self.padded_mean_table = pad_func(
             self.mean_table.permute(2, 0, 1).unsqueeze(0)
         )  # [H, W, C] -> [C, H, W] -> [N, C, H, W]
@@ -89,19 +99,39 @@ class DenseInstanceNorm(nn.Module):
                 # kernelized instance normalization
                 assert x.shape[0] == 1
 
-                top = y_anchor
-                down = y_anchor + 2 * padding + 1
-                left = x_anchor
-                right = x_anchor + 2 * padding + 1
-                x_mean = self.padded_mean_table[
-                    :, :, top:down, left:right
-                ]  # 1, C, H, W
-                x_std = self.padded_std_table[
-                    :, :, top:down, left:right
-                ]  # 1, C, H, W
+                if self.interpolate_mode == 'bilinear':
+                    top = y_anchor
+                    down = y_anchor + 2 * padding + 1
+                    left = x_anchor
+                    right = x_anchor + 2 * padding + 1
+                    x_mean = self.padded_mean_table[
+                        :, :, top:down, left:right
+                    ]  # 1, C, H, W
+                    x_std = self.padded_std_table[
+                        :, :, top:down, left:right
+                    ]  # 1, C, H, W
 
-                x_mean = self.interpolation3d.interpolation_mean_table(x_mean[0]).unsqueeze(0)
-                x_std = self.interpolation3d.interpolation_std_table_inverse(x_std[0]).unsqueeze(0)
+                    x_mean = self.interpolation3d.interpolation_mean_table(x_mean[0]).unsqueeze(0)
+                    x_std = self.interpolation3d.interpolation_std_table_inverse(x_std[0]).unsqueeze(0)
+                
+                elif self.interpolate_mode == 'bicubic':
+                    _, _, h, w = x.shape
+                    top = y_anchor
+                    down = y_anchor + 4
+                    left = x_anchor
+                    right = x_anchor + 4
+                    x_mean = self.padded_mean_table[
+                        :, :, top:down, left:right
+                    ]  # 1, C, H, W
+                    x_std = self.padded_std_table[
+                        :, :, top:down, left:right
+                    ]  # 1, C, H, W
+                    x_mean = f.interpolate(x_mean, (h * 3, w * 3), mode='bicubic')
+                    x_mean = x_mean[:, :, h // 2: h // 2 + h, w // 2 : w // 2 + w]  # TODO: tricky
+                    x_std = f.interpolate(1 / x_std, (h * 3, w * 3), mode='bicubic')
+                    x_std = x_std[:, :, h // 2: h // 2 + h, w // 2 : w // 2 + w]  # TODO: tricky
+                else:
+                    raise ValueError('no interpolate_mode support')
 
                 x = (x - x_mean) * x_std * self.weight + self.bias
             return x
