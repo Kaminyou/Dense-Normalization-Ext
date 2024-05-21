@@ -255,7 +255,7 @@ class PrefetchDenseInstanceNorm(nn.Module):
                 self.std_table[pre_y_anchor, pre_x_anchor] = pre_x_std
 
                 # self.padded_mean_table[:, :, pre_y_anchor + 1, pre_x_anchor + 1] = pre_x_mean.squeeze(0)  # noqa
-                # self.padded_std_table[:, :, pre_y_anchor + 1, pre_x_anchor + 1] = pre_x_std.squeeze(0)
+                # self.padded_std_table[:, :, pre_y_anchor + 1, pre_x_anchor + 1] = pre_x_std.squeeze(0)  # noqa
                 pre_x_mean = pre_x_mean.unsqueeze(-1).unsqueeze(-1)
                 pre_x_std = pre_x_std.unsqueeze(-1).unsqueeze(-1)
 
@@ -329,7 +329,7 @@ class PrefetchDenseInstanceNorm(nn.Module):
 
                     pre_x = (pre_x - pre_x_mean) / pre_x_std * self.weight + self.bias
                 processed_pre_xs.append(pre_x)
-            
+
             if y_anchor != -1:
                 _, _, h, w = x.shape
                 top = y_anchor
@@ -350,7 +350,7 @@ class PrefetchDenseInstanceNorm(nn.Module):
                 real_x = (real_x - x_mean) * x_std * self.weight + self.bias
             x = torch.cat([real_x] + processed_pre_xs, dim=0)
             return x
-            
+
         else:
             raise ValueError('no interpolate_mode support')
 

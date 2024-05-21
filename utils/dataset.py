@@ -346,7 +346,7 @@ class XPrefetchInferenceDataset(Dataset):
                 "pre_x_anchor": image_second_info['x_anchor'],
             }
         else:
-            raise NotImplementError
+            raise NotImplementedError
 
     def get_thumbnail(self):
         thumbnail_img = np.array(Image.open(self.thumbnail).convert("RGB"))

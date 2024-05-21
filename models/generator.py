@@ -7,7 +7,13 @@ from models.upsample import Upsample
 
 
 class ResnetBlock(nn.Module):
-    def __init__(self, features, normalization="in", parallelism=False, interpolate_mode='bilinear'):
+    def __init__(
+        self,
+        features,
+        normalization="in",
+        parallelism=False,
+        interpolate_mode='bilinear',
+    ):
         super().__init__()
         self.normalization = normalization
         self.model = nn.Sequential(
