@@ -18,10 +18,10 @@ RUN apt-get update && \
 	apt-get clean && \
 	rm -rf /var/lib/apt/lists/*
 
-RUN echo deb http://tw.archive.ubuntu.com/ubuntu/ focal main restricted >> /etc/apt/sources.list && \
-	apt-key adv --no-tty --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 3B4FE6ACC0B21F32 && \
-	apt update && \
-	rm -rf /var/lib/apt/lists/*
+# RUN echo deb http://tw.archive.ubuntu.com/ubuntu/ focal main restricted >> /etc/apt/sources.list && \
+# 	apt-key adv --no-tty --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 3B4FE6ACC0B21F32 && \
+# 	apt update && \
+# 	rm -rf /var/lib/apt/lists/*
 
 RUN locale-gen en_US.UTF-8 && \
 	update-locale && \

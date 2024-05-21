@@ -169,7 +169,7 @@ def use_dense_instance_norm(model, padding=1):
 
 
 class PrefetchDenseInstanceNorm(nn.Module):
-    def __init__(self, out_channels=None, affine=True, device="cuda"):
+    def __init__(self, out_channels=None, affine=True, device="cuda", interpolate_mode='bicubic'):
         super(PrefetchDenseInstanceNorm, self).__init__()
 
         # if use normal instance normalization during evaluation mode
@@ -177,8 +177,13 @@ class PrefetchDenseInstanceNorm(nn.Module):
         # if collecting instance normalization mean and std
         # during evaluation mode'
 
+        if interpolate_mode not in ['bilinear', 'bicubic']:
+            raise ValueError('interpolate_mode supports bilinear and bicubic only')
+        
         self.out_channels = out_channels
         self.device = device
+        self.interpolate_mode = interpolate_mode
+
         self.interpolation3d = Interpolation3D(channel=out_channels, device=device)
         if affine:
             self.weight = nn.Parameter(
@@ -205,15 +210,18 @@ class PrefetchDenseInstanceNorm(nn.Module):
         )
         self.pad_table()
 
-    def pad_table(self):
+    def pad_table(self, padding=1):
         # modify
         # padded table shape inconsisency
         # TODO: Don't permute the dimensions
-
-        self.padded_mean_table = self.pad_func(
+        if self.interpolate_mode == 'bicubic':  # TODO: set elegantly
+            pad_func = nn.ReplicationPad2d((1, 2, 1, 2))
+        else:
+            pad_func = nn.ReplicationPad2d((padding, padding, padding, padding))
+        self.padded_mean_table = pad_func(
             self.mean_table.permute(2, 0, 1).unsqueeze(0)
         )  # [H, W, C] -> [C, H, W] -> [N, C, H, W]
-        self.padded_std_table = self.pad_func(
+        self.padded_std_table = pad_func(
             self.std_table.permute(2, 0, 1).unsqueeze(0)
         )  # [H, W, C] -> [C, H, W] -> [N, C, H, W]
 
@@ -228,51 +236,95 @@ class PrefetchDenseInstanceNorm(nn.Module):
         y_anchor=None,
         x_anchor=None,
         padding=1,
-        pre_y_anchor=None,
-        pre_x_anchor=None,
+        **kwargs,
     ):
-        real_x, pre_x = torch.chunk(x, 2, dim=0)
-        # do caching
-        if pre_y_anchor != -1:
-            _, _, h, _ = pre_x.shape
-            self.interpolation3d.init(size=h)
-            pre_x_std, pre_x_mean = torch.std_mean(pre_x, dim=(2, 3))  # [B, C]
-            # x_anchor, y_anchor = [B], [B]
-            # table = [H, W, C]
-            # update std and mean to corresponing coordinates
-            self.mean_table[pre_y_anchor, pre_x_anchor] = pre_x_mean
-            self.std_table[pre_y_anchor, pre_x_anchor] = pre_x_std
+        
+        interpolate_mode = 'bicubic'  # change config
+        pre_y_anchors = []
+        pre_x_anchors = []
 
-            self.padded_mean_table[:, :, pre_y_anchor + 1, pre_x_anchor + 1] = pre_x_mean.squeeze(0)  # noqa
-            self.padded_std_table[:, :, pre_y_anchor + 1, pre_x_anchor + 1] = pre_x_std.squeeze(0)
-            pre_x_mean = pre_x_mean.unsqueeze(-1).unsqueeze(-1)
-            pre_x_std = pre_x_std.unsqueeze(-1).unsqueeze(-1)
+        i = 1
+        while f'pre_y{i}_anchor' in kwargs and f'pre_x{i}_anchor' in kwargs:
+            pre_y_anchors.append(kwargs[f'pre_y{i}_anchor'])
+            pre_x_anchors.append(kwargs[f'pre_x{i}_anchor'])
+            i += 1
 
-            pre_x = (pre_x - pre_x_mean) / pre_x_std * self.weight + self.bias
+        N = len(pre_y_anchors)
+        
+        if self.interpolate_mode == 'bicubic':
+            chunks = torch.chunk(x, N + 1, dim=0)
+            real_x = chunks[0]
+            pre_xs = chunks[1:]
+        else:
+            real_x, pre_x = torch.chunk(x, 2, dim=0)
+            pre_xs = [pre_x]
+            pre_y_anchors = [kwargs.get('pre_y_anchor', -1)]
+            pre_x_anchors = [kwargs.get('pre_x_anchor', -1)]
+
+        processed_pre_xs = []
+        for pre_x, pre_y_anchor, pre_x_anchor in zip(pre_xs, pre_y_anchors, pre_x_anchors):
+            if pre_y_anchor != -1:
+                _, _, h, _ = pre_x.shape
+                self.interpolation3d.init(size=h)
+                pre_x_std, pre_x_mean = torch.std_mean(pre_x, dim=(2, 3))  # [B, C]
+                # x_anchor, y_anchor = [B], [B]
+                # table = [H, W, C]
+                # update std and mean to corresponing coordinates
+                self.mean_table[pre_y_anchor, pre_x_anchor] = pre_x_mean
+                self.std_table[pre_y_anchor, pre_x_anchor] = pre_x_std
+
+                self.padded_mean_table[:, :, pre_y_anchor + 1, pre_x_anchor + 1] = pre_x_mean.squeeze(0)
+                self.padded_std_table[:, :, pre_y_anchor + 1, pre_x_anchor + 1] = pre_x_std.squeeze(0)
+
+                pre_x_mean = pre_x_mean.unsqueeze(-1).unsqueeze(-1)
+                pre_x_std = pre_x_std.unsqueeze(-1).unsqueeze(-1)
+
+                pre_x = (pre_x - pre_x_mean) / pre_x_std * self.weight + self.bias
+            processed_pre_xs.append(pre_x)
 
         if y_anchor != -1:
-            top = y_anchor
-            down = y_anchor + 2 * padding + 1
-            left = x_anchor
-            right = x_anchor + 2 * padding + 1
-            x_mean = self.padded_mean_table[
-                :, :, top:down, left:right
-            ].squeeze(0)  # 1, C, H, W
+            if self.interpolate_mode == 'bilinear':
+                top = y_anchor
+                down = y_anchor + 2 * padding + 1
+                left = x_anchor
+                right = x_anchor + 2 * padding + 1
+                x_mean = self.padded_mean_table[
+                    :, :, top:down, left:right
+                ].squeeze(0)  # 1, C, H, W
 
-            x_std = self.padded_std_table[
-                :, :, top:down, left:right
-            ].squeeze(0)
+                x_std = self.padded_std_table[
+                    :, :, top:down, left:right
+                ].squeeze(0)
 
-            x_mean_expand = x_mean[:, 1, 1].unsqueeze(-1).unsqueeze(-1).expand(-1, 3, 3)
-            x_std_expand = x_std[:, 1, 1].unsqueeze(-1).unsqueeze(-1).expand(-1, 3, 3)
-            x_mean = torch.where(x_mean == 0, x_mean_expand, x_mean)
-            x_std = torch.where(x_std == 0, x_std_expand, x_std)
+                x_mean_expand = x_mean[:, 1, 1].unsqueeze(-1).unsqueeze(-1).expand(-1, 3, 3)
+                x_std_expand = x_std[:, 1, 1].unsqueeze(-1).unsqueeze(-1).expand(-1, 3, 3)
+                x_mean = torch.where(x_mean == 0, x_mean_expand, x_mean)
+                x_std = torch.where(x_std == 0, x_std_expand, x_std)
 
-            x_mean = self.interpolation3d.interpolation_mean_table(x_mean).unsqueeze(0)
-            x_std = self.interpolation3d.interpolation_std_table_inverse(x_std).unsqueeze(0)
-
+                x_mean = self.interpolation3d.interpolation_mean_table(x_mean).unsqueeze(0)
+                x_std = self.interpolation3d.interpolation_std_table_inverse(x_std).unsqueeze(0)
+            
+            elif self.interpolate_mode == 'bicubic':
+                    _, _, h, w = x.shape
+                    top = y_anchor
+                    down = y_anchor + 4
+                    left = x_anchor
+                    right = x_anchor + 4
+                    x_mean = self.padded_mean_table[
+                        :, :, top:down, left:right
+                    ]  # 1, C, H, W
+                    x_std = self.padded_std_table[
+                        :, :, top:down, left:right
+                    ]  # 1, C, H, W
+                    x_mean = f.interpolate(x_mean, (h * 3, w * 3), mode='bicubic')
+                    x_mean = x_mean[:, :, h // 2: h // 2 + h, w // 2: w // 2 + w]  # TODO: tricky
+                    x_std = f.interpolate(1 / x_std, (h * 3, w * 3), mode='bicubic')
+                    x_std = x_std[:, :, h // 2: h // 2 + h, w // 2: w // 2 + w]  # TODO: tricky
+            else:
+                raise ValueError('no interpolate_mode support')
+            
             real_x = (real_x - x_mean) * x_std * self.weight + self.bias
-        x = torch.cat((real_x, pre_x), dim=0)
+        x = torch.cat([real_x] + processed_pre_xs, dim=0)
         return x
 
 
