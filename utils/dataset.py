@@ -201,7 +201,7 @@ class XPrefetchInferenceDataset(Dataset):
         if self.return_anchor:
             self.__get_boundary()
 
-        interpolate_mode='bicubic'  # change config
+        interpolate_mode = 'bicubic'  # change config
         if interpolate_mode == 'bicubic':
             self.length_dataset = len(self.X_images) + 9
         else:
