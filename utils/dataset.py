@@ -292,7 +292,7 @@ class XPrefetchInferenceDataset(Dataset):
                 indices.append(index + 3 + (self.y_anchor_num + 1))
                 indices.append(index + 3 + 2 * (self.y_anchor_num + 1))
             else:
-                indices.append(2 * (self.y_anchor_num + 1) + 3)
+                indices.append(2 * (self.y_anchor_num + 1) + 3 + index)
                 indices.extend([-1, -1])
 
             images_info = [self.get_image(idx) for idx in indices]
