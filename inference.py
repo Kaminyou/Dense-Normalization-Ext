@@ -160,7 +160,7 @@ def main():
         cnt = 0
         for idx, data in enumerate(test_loader):
             print(f"Executing {idx}", end="\r")
-            interpolate_mode='bicubic' #change config
+            interpolate_mode = 'bicubic'  # change config
             N = 4  # Max Number of images to prefetch, change this to the desired number
             if interpolate_mode == 'bicubic':
                 images = [data['X_img']]
