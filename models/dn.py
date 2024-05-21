@@ -8,7 +8,6 @@ from models.interpolation import Interpolation3D
 class DenseInstanceNorm(nn.Module):
     def __init__(self, out_channels=None, affine=True, device="cuda", interpolate_mode='bicubic'):
         super(DenseInstanceNorm, self).__init__()
-        print(interpolate_mode)
 
         if interpolate_mode not in ['bilinear', 'bicubic']:
             raise ValueError('interpolate_mode supports bilinear and bicubic only')
@@ -255,8 +254,8 @@ class PrefetchDenseInstanceNorm(nn.Module):
                 self.mean_table[pre_y_anchor, pre_x_anchor] = pre_x_mean
                 self.std_table[pre_y_anchor, pre_x_anchor] = pre_x_std
 
-                self.padded_mean_table[:, :, pre_y_anchor + 1, pre_x_anchor + 1] = pre_x_mean.squeeze(0)  # noqa
-                self.padded_std_table[:, :, pre_y_anchor + 1, pre_x_anchor + 1] = pre_x_std.squeeze(0)
+                # self.padded_mean_table[:, :, pre_y_anchor + 1, pre_x_anchor + 1] = pre_x_mean.squeeze(0)  # noqa
+                # self.padded_std_table[:, :, pre_y_anchor + 1, pre_x_anchor + 1] = pre_x_std.squeeze(0)
                 pre_x_mean = pre_x_mean.unsqueeze(-1).unsqueeze(-1)
                 pre_x_std = pre_x_std.unsqueeze(-1).unsqueeze(-1)
 
@@ -267,6 +266,7 @@ class PrefetchDenseInstanceNorm(nn.Module):
                 down = y_anchor + 2 * padding + 1
                 left = x_anchor
                 right = x_anchor + 2 * padding + 1
+                self.pad_table()
                 x_mean = self.padded_mean_table[
                     :, :, top:down, left:right
                 ].squeeze(0)  # 1, C, H, W
@@ -323,7 +323,6 @@ class PrefetchDenseInstanceNorm(nn.Module):
 
                     # self.padded_mean_table[:, :, pre_y_anchor + 1, pre_x_anchor + 1] = pre_x_mean.squeeze(0)  # noqa
                     # self.padded_std_table[:, :, pre_y_anchor + 1, pre_x_anchor + 1] = pre_x_std.squeeze(0)  # noqa
-                    self.pad_table()
 
                     pre_x_mean = pre_x_mean.unsqueeze(-1).unsqueeze(-1)
                     pre_x_std = pre_x_std.unsqueeze(-1).unsqueeze(-1)
@@ -337,6 +336,7 @@ class PrefetchDenseInstanceNorm(nn.Module):
                 down = y_anchor + 4
                 left = x_anchor
                 right = x_anchor + 4
+                self.pad_table()
                 x_mean = self.padded_mean_table[
                     :, :, top:down, left:right
                 ]  # 1, C, H, W
