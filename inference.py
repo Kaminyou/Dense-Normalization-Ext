@@ -34,6 +34,7 @@ def main():
         normalization=config["INFERENCE_SETTING"]["NORMALIZATION"],
         isTrain=False,
         parallelism=config["INFERENCE_SETTING"].get('PARALLELISM', False),
+        interpolate_mode=config["INFERENCE_SETTING"].get('INTERPOLATE_MODE', 'bilinear'),
     )
 
     if config["INFERENCE_SETTING"]["NORMALIZATION"] != 'dn':
@@ -45,6 +46,7 @@ def main():
             transform=test_transforms,
             return_anchor=True,
             pad=MARGIN_PADDING,
+            interpolate_mode=config["INFERENCE_SETTING"].get('INTERPOLATE_MODE', 'bilinear'),
         )
     else:
         test_dataset = XInferenceDataset(
@@ -160,7 +162,7 @@ def main():
         cnt = 0
         for idx, data in enumerate(test_loader):
             print(f"Executing {idx}", end="\r")
-            interpolate_mode = 'bicubic'  # change config
+            interpolate_mode = config["INFERENCE_SETTING"].get('INTERPOLATE_MODE', 'bilinear')
             N = 4  # Max Number of images to prefetch, change this to the desired number
             if interpolate_mode == 'bicubic':
                 images = [data['X_img']]

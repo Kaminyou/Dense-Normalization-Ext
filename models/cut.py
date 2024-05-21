@@ -21,7 +21,7 @@ from models.tin import (init_thumbnail_instance_norm,
 class ContrastiveModel(BaseModel):
     # instance normalization can be different from the
     # one specified during training
-    def __init__(self, config, normalization="in", parallelism=False):
+    def __init__(self, config, normalization="in", parallelism=False, interpolate_mode='bilinear'):
         BaseModel.__init__(self, config)
         self.model_names = ["D_Y", "G", "H"]
         self.loss_names = ["G_adv", "D_Y", "G", "NCE"]
@@ -35,7 +35,11 @@ class ContrastiveModel(BaseModel):
         # so specification of instane normalization is not required
         self.D_Y = Discriminator().to(self.device)
 
-        self.G = Generator(normalization=normalization, parallelism=parallelism).to(self.device)
+        self.G = Generator(
+            normalization=normalization,
+            parallelism=parallelism,
+            interpolate_mode=interpolate_mode,
+        ).to(self.device)
         self.H = Head().to(self.device)
 
         self.opt_D_Y = optim.Adam(

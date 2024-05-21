@@ -177,13 +177,20 @@ class XInferenceDataset(Dataset):
 
 class XPrefetchInferenceDataset(Dataset):
     def __init__(
-        self, root_X, transform=None, return_anchor=False, thumbnail=None, pad: int = 16,
+        self,
+        root_X,
+        transform=None,
+        return_anchor=False,
+        thumbnail=None,
+        pad: int = 16,
+        interpolate_mode='bilinear',
     ):
         self.root_X = root_X
         self.transform = transform
         self.return_anchor = return_anchor
         self.thumbnail = thumbnail
         self.pad = pad
+        self.interpolate_mode = interpolate_mode
 
         def custom_sort_key(filename):
             parts = filename.split('_')
@@ -201,8 +208,7 @@ class XPrefetchInferenceDataset(Dataset):
         if self.return_anchor:
             self.__get_boundary()
 
-        interpolate_mode = 'bicubic'  # change config
-        if interpolate_mode == 'bicubic':
+        if self.interpolate_mode == 'bicubic':
             self.length_dataset = len(self.X_images) + 9
         else:
             self.length_dataset = len(self.X_images) + self.y_anchor_num + 1 + 2
@@ -275,10 +281,9 @@ class XPrefetchInferenceDataset(Dataset):
         }
 
     def __getitem__(self, index):  # start from (0, 0)
-        interpolate_mode = 'bicubic'  # change config
         N = 4  # Max Number of images to prefetch, change this to the desired number
 
-        if interpolate_mode == 'bicubic':
+        if self.interpolate_mode == 'bicubic':
             index -= 9
 
             indices = [index]
@@ -318,7 +323,7 @@ class XPrefetchInferenceDataset(Dataset):
 
             return result
 
-        else:
+        elif self.interpolate_mode == 'bilinear':
             index -= (self.y_anchor_num + 1 + 2)
 
             index_first = index
@@ -340,6 +345,8 @@ class XPrefetchInferenceDataset(Dataset):
                 "pre_y_anchor": image_second_info['y_anchor'],
                 "pre_x_anchor": image_second_info['x_anchor'],
             }
+        else:
+            raise NotImplementError
 
     def get_thumbnail(self):
         thumbnail_img = np.array(Image.open(self.thumbnail).convert("RGB"))
