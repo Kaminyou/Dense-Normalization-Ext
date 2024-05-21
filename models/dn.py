@@ -273,8 +273,9 @@ class PrefetchDenseInstanceNorm(nn.Module):
                 self.mean_table[pre_y_anchor, pre_x_anchor] = pre_x_mean
                 self.std_table[pre_y_anchor, pre_x_anchor] = pre_x_std
 
-                self.padded_mean_table[:, :, pre_y_anchor + 1, pre_x_anchor + 1] = pre_x_mean.squeeze(0)
-                self.padded_std_table[:, :, pre_y_anchor + 1, pre_x_anchor + 1] = pre_x_std.squeeze(0)
+                # self.padded_mean_table[:, :, pre_y_anchor + 1, pre_x_anchor + 1] = pre_x_mean.squeeze(0)
+                # self.padded_std_table[:, :, pre_y_anchor + 1, pre_x_anchor + 1] = pre_x_std.squeeze(0)
+                self.pad_table()
 
                 pre_x_mean = pre_x_mean.unsqueeze(-1).unsqueeze(-1)
                 pre_x_std = pre_x_std.unsqueeze(-1).unsqueeze(-1)
