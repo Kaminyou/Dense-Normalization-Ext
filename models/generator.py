@@ -7,7 +7,13 @@ from models.upsample import Upsample
 
 
 class ResnetBlock(nn.Module):
-    def __init__(self, features, normalization="in", parallelism=False):
+    def __init__(
+        self,
+        features,
+        normalization="in",
+        parallelism=False,
+        interpolate_mode='bilinear',
+    ):
         super().__init__()
         self.normalization = normalization
         self.model = nn.Sequential(
@@ -17,6 +23,7 @@ class ResnetBlock(nn.Module):
                 features,
                 normalization=normalization,
                 parallelism=parallelism,
+                interpolate_mode=interpolate_mode,
             ),
             nn.ReLU(True),
             nn.ReflectionPad2d(1),
@@ -25,6 +32,7 @@ class ResnetBlock(nn.Module):
                 features,
                 normalization=normalization,
                 parallelism=parallelism,
+                interpolate_mode=interpolate_mode,
             ),
         )
 
@@ -62,6 +70,7 @@ class GeneratorBasicBlock(nn.Module):
         do_downsample=False,
         normalization="in",
         parallelism=False,
+        interpolate_mode='bilinear',
     ):
         super().__init__()
 
@@ -78,6 +87,7 @@ class GeneratorBasicBlock(nn.Module):
             out_features,
             normalization=normalization,
             parallelism=parallelism,
+            interpolate_mode=interpolate_mode,
         )
         self.relu = nn.ReLU(True)
         if self.do_downsample:
@@ -129,7 +139,13 @@ class GeneratorBasicBlock(nn.Module):
 
 class Generator(nn.Module):
     def __init__(
-        self, in_channels=3, features=64, residuals=9, normalization="in", parallelism=False,
+        self,
+        in_channels=3,
+        features=64,
+        residuals=9,
+        normalization="in",
+        parallelism=False,
+        interpolate_mode='bilinear',
     ):
         super().__init__()
         self.residuals = residuals
@@ -142,6 +158,7 @@ class Generator(nn.Module):
                 features,
                 normalization=normalization,
                 parallelism=parallelism,
+                interpolate_mode=interpolate_mode,
             ),
             nn.ReLU(True),
         )
@@ -153,6 +170,7 @@ class Generator(nn.Module):
             do_downsample=True,
             normalization=normalization,
             parallelism=parallelism,
+            interpolate_mode=interpolate_mode,
         )
         self.downsampleblock3 = GeneratorBasicBlock(
             features * 2,
@@ -161,11 +179,17 @@ class Generator(nn.Module):
             do_downsample=True,
             normalization=normalization,
             parallelism=parallelism,
+            interpolate_mode=interpolate_mode,
         )
 
         self.resnetblocks4 = nn.Sequential(
             *[
-                ResnetBlock(features * 4, normalization=normalization, parallelism=parallelism)
+                ResnetBlock(
+                    features * 4,
+                    normalization=normalization,
+                    parallelism=parallelism,
+                    interpolate_mode=interpolate_mode,
+                )
                 for _ in range(residuals)
             ]
         )
@@ -177,6 +201,7 @@ class Generator(nn.Module):
             do_downsample=False,
             normalization=normalization,
             parallelism=parallelism,
+            interpolate_mode=interpolate_mode,
         )
         self.upsampleblock6 = GeneratorBasicBlock(
             features * 2,
@@ -185,6 +210,7 @@ class Generator(nn.Module):
             do_downsample=False,
             normalization=normalization,
             parallelism=parallelism,
+            interpolate_mode=interpolate_mode,
         )
 
         self.block7 = nn.Sequential(
