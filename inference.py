@@ -162,39 +162,20 @@ def main():
         cnt = 0
         for idx, data in enumerate(test_loader):
             print(f"Executing {idx}", end="\r")
-            interpolate_mode = config["INFERENCE_SETTING"].get('INTERPOLATE_MODE', 'bilinear')
-            N = 4  # Max Number of images to prefetch, change this to the desired number
-            if interpolate_mode == 'bicubic':
-                images = [data['X_img']]
-                for i in range(1, N):
-                    images.append(data[f'pre_img{i}'])
-                X = torch.cat(images, dim=0)
-            else:
-                X = torch.cat((data['X_img'], data['pre_img']), dim=0)
+
+            images = [data['X_img']] + data['pre_img']
+            X = torch.cat(images, dim=0)
 
             now = time.time()
             cnt += 1
-            if interpolate_mode == 'bicubic':
-                params = {
-                    'X': X,
-                    'y_anchor': int(data['y_idx'][0]),
-                    'x_anchor': int(data['x_idx'][0]),
-                    'padding': 1,
-                }
-                for i in range(1, N):
-                    params[f'pre_y{i}_anchor'] = int(data[f'pre_y{i}_idx'][0])
-                    params[f'pre_x{i}_anchor'] = int(data[f'pre_x{i}_idx'][0])
-
-                Y_fake = model.inference_with_anchor(**params)
-            else:
-                Y_fake = model.inference_with_anchor(
-                    X,
-                    y_anchor=int(data['y_idx'][0]),
-                    x_anchor=int(data['x_idx'][0]),
-                    padding=1,
-                    pre_y_anchor=int(data['pre_y_idx'][0]),
-                    pre_x_anchor=int(data['pre_x_idx'][0]),
-                )
+            Y_fake = model.inference_with_anchor(
+                X,
+                y_anchor=int(data['y_idx'][0]),
+                x_anchor=int(data['x_idx'][0]),
+                padding=1,
+                pre_y_anchor=[int(i) for i in data['pre_y_idx']],
+                pre_x_anchor=[int(i) for i in data['pre_x_idx']],
+            )
             total_time += time.time() - now
             Y_fake = Y_fake[[0]]
             Y_fake = Y_fake[:, :, MARGIN_PADDING:512 + MARGIN_PADDING, MARGIN_PADDING:512 + MARGIN_PADDING]  # noqa
