@@ -281,72 +281,46 @@ class XPrefetchInferenceDataset(Dataset):
         }
 
     def __getitem__(self, index):  # start from (0, 0)
-        N = 4  # Max Number of images to prefetch, change this to the desired number
 
         if self.interpolate_mode == 'bicubic':
             index -= 9
-
             indices = [index]
             if index < 0:  # initial index
                 row = (-index - 1) % 3
                 col = (-index - 1) // 3
                 indices.append(col * (self.y_anchor_num + 1) + row)
-                indices.extend([-1, -1])
             elif index < (self.y_anchor_num + 1 - 3):
                 indices.append(index + 3)
                 indices.append(index + 3 + (self.y_anchor_num + 1))
                 indices.append(index + 3 + 2 * (self.y_anchor_num + 1))
             else:
                 indices.append(2 * (self.y_anchor_num + 1) + 3 + index)
-                indices.extend([-1, -1])
-
-            images_info = [self.get_image(idx) for idx in indices]
-
-            result = {
-                "X_img": images_info[0]['img'],
-                "X_path": images_info[0]['path'],
-                "y_idx": images_info[0]['y_idx'],
-                "x_idx": images_info[0]['x_idx'],
-                "y_anchor": images_info[0]['y_anchor'],
-                "x_anchor": images_info[0]['x_anchor'],
-            }
-
-            for i in range(1, N):
-                result.update({
-                    f"pre_img{i}": images_info[i]['img'],
-                    f"pre_path{i}": images_info[i]['path'],
-                    f"pre_y{i}_idx": images_info[i]['y_idx'],
-                    f"pre_x{i}_idx": images_info[i]['x_idx'],
-                    f"pre_y{i}_anchor": images_info[i]['y_anchor'],
-                    f"pre_x{i}_anchor": images_info[i]['x_anchor'],
-                })
-
-            return result
 
         elif self.interpolate_mode == 'bilinear':
             index -= (self.y_anchor_num + 1 + 2)
-
-            index_first = index
             index_second = index + self.y_anchor_num + 1 + 2
+            indices = [index, index_second]
 
-            image_first_info = self.get_image(index_first)
-            image_second_info = self.get_image(index_second)
-            return {
-                "X_img": image_first_info['img'],
-                "X_path": image_first_info['path'],
-                "y_idx": image_first_info['y_idx'],
-                "x_idx": image_first_info['x_idx'],
-                "y_anchor": image_first_info['y_anchor'],
-                "x_anchor": image_first_info['x_anchor'],
-                "pre_img": image_second_info['img'],
-                "pre_path": image_second_info['path'],
-                "pre_y_idx": image_second_info['y_idx'],
-                "pre_x_idx": image_second_info['x_idx'],
-                "pre_y_anchor": image_second_info['y_anchor'],
-                "pre_x_anchor": image_second_info['x_anchor'],
-            }
         else:
             raise NotImplementedError
+
+        images_info = [self.get_image(idx) for idx in indices]
+        n = len(images_info)
+
+        return {
+            "X_img": images_info[0]['img'],
+            "X_path": images_info[0]['path'],
+            "y_idx": images_info[0]['y_idx'],
+            "x_idx": images_info[0]['x_idx'],
+            "y_anchor": images_info[0]['y_anchor'],
+            "x_anchor": images_info[0]['x_anchor'],
+            "pre_img": [images_info[i]['img'] for i in range(1, n)],
+            "pre_path": [images_info[i]['path'] for i in range(1, n)],
+            "pre_y_idx": [images_info[i]['y_idx'] for i in range(1, n)],
+            "pre_x_idx": [images_info[i]['x_idx'] for i in range(1, n)],
+            "pre_y_anchor": [images_info[i]['y_anchor'] for i in range(1, n)],
+            "pre_x_anchor": [images_info[i]['x_anchor'] for i in range(1, n)],
+        }
 
     def get_thumbnail(self):
         thumbnail_img = np.array(Image.open(self.thumbnail).convert("RGB"))
