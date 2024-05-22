@@ -92,7 +92,7 @@ class DenseInstanceNorm(nn.Module):
         else:
             if y_anchor is None:
                 raise ValueError('y_anchor is None')
-            
+
             if x_anchor is None:
                 raise ValueError('x_anchor is None')
 
@@ -273,7 +273,7 @@ class PrefetchDenseInstanceNorm(nn.Module):
         if pre_y_anchor is not None and pre_x_anchor is not None:
             pre_x_std, pre_x_mean = torch.std_mean(pre_x, dim=(2, 3))  # [B, C]
 
-            for i, (sub_pre_y_anchor, sub_pre_x_anchor) in enumerate(zip(pre_y_anchor, pre_x_anchor)):
+            for i, (sub_pre_y_anchor, sub_pre_x_anchor) in enumerate(zip(pre_y_anchor, pre_x_anchor)):  # noqa
                 if sub_pre_y_anchor == -1:
                     continue
                 self.mean_table[sub_pre_y_anchor, sub_pre_x_anchor] = pre_x_mean[i]
@@ -283,7 +283,7 @@ class PrefetchDenseInstanceNorm(nn.Module):
             pre_x_std = pre_x_std.unsqueeze(-1).unsqueeze(-1)
 
             pre_x = (pre_x - pre_x_mean) / pre_x_std * self.weight + self.bias
-        
+
         if y_anchor != -1 and x_anchor != -1:
             top = y_anchor
             left = x_anchor
@@ -295,10 +295,10 @@ class PrefetchDenseInstanceNorm(nn.Module):
             elif self.interpolate_mode == 'bicubic':
                 down = y_anchor + 4
                 right = x_anchor + 4
-            
+
             else:
                 raise NotImplementedError(f'interpolate_mode={self.interpolate_mode}')
-            
+
             self.pad_table()
             x_mean = self.padded_mean_table[
                 :, :, top:down, left:right
@@ -315,18 +315,18 @@ class PrefetchDenseInstanceNorm(nn.Module):
                 x_std = torch.where(x_std == 0, x_std_expand, x_std)
                 x_mean = self.interpolation3d.interpolation_mean_table(x_mean).unsqueeze(0)
                 x_std = self.interpolation3d.interpolation_std_table_inverse(x_std).unsqueeze(0)
-            
+
             elif self.interpolate_mode == 'bicubic':
                 x_mean = f.interpolate(x_mean, (h * 3, w * 3), mode='bicubic')
                 x_mean = x_mean[:, :, h // 2: h // 2 + h, w // 2: w // 2 + w]  # TODO: tricky
                 x_std = f.interpolate(1 / x_std, (h * 3, w * 3), mode='bicubic')
                 x_std = x_std[:, :, h // 2: h // 2 + h, w // 2: w // 2 + w]  # TODO: tricky
-            
+
             else:
                 raise NotImplementedError(f'interpolate_mode={self.interpolate_mode}')
-            
+
             real_x = (real_x - x_mean) * x_std * self.weight + self.bias
-        
+
         x = torch.cat((real_x, pre_x), dim=0)
         return x
 

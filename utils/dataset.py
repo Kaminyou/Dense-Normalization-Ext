@@ -295,15 +295,15 @@ class XPrefetchInferenceDataset(Dataset):
                 indices.append(index + 3 + 2 * (self.y_anchor_num + 1))
             else:
                 indices.append(2 * (self.y_anchor_num + 1) + 3 + index)
-        
+
         elif self.interpolate_mode == 'bilinear':
             index -= (self.y_anchor_num + 1 + 2)
             index_second = index + self.y_anchor_num + 1 + 2
             indices = [index, index_second]
-        
+
         else:
             raise NotImplementedError
-        
+
         images_info = [self.get_image(idx) for idx in indices]
         n = len(images_info)
 
