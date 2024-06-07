@@ -14,6 +14,10 @@
     ```
     $ docker exec -it dn-env bash
     ```
+## Download sample materials
+```bash
+$ ./download.sh
+```
 
 ## Config example
 ```yml
